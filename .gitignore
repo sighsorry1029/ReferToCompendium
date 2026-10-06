@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+environment.props
+tests/**/bin/
+tests/**/obj/
+Thunderstore/*.zip
+Thunderstore/*.tmp
+# Local game-log investigations can contain connection/session details.
+docs/diagnostics/

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../TranslationCatalog.cs" Link="TranslationCatalog.cs" />
+    <EmbeddedResource Include="../../translations/English.yml" LogicalName="ReferToCompendium.translations.English.yml" />
+    <EmbeddedResource Include="../../translations/Korean.yml" LogicalName="ReferToCompendium.translations.Korean.yml" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
+</Project>

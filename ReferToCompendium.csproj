@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ReferToCompendium</AssemblyName>
+    <RootNamespace>ReferToCompendium</RootNamespace>
+    <Version>1.0.2</Version>
+    <Description>Client-side compendium hints, personal list organization, and configurable status effect HUD for Valheim.</Description>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <ILRepackTargetsFile>$(MSBuildProjectDirectory)\build\ILRepack.targets</ILRepackTargetsFile>
+  </PropertyGroup>
+  <Import Project="environment.props" Condition="Exists('environment.props')" />
+  <PropertyGroup>
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Valheim</GamePath>
+    <GameManagedPath Condition="'$(GameManagedPath)' == ''">$(GamePath)\valheim_Data\Managed</GameManagedPath>
+    <BepInExPath Condition="'$(BepInExPath)' == ''">$(GamePath)\BepInEx</BepInExPath>
+    <GamePluginDirectory Condition="'$(GamePluginDirectory)' == ''">$(BepInExPath)\plugins</GamePluginDirectory>
+    <DeployToGame Condition="'$(DeployToGame)' == ''">false</DeployToGame>
+    <BuildPackages Condition="'$(BuildPackages)' == '' And '$(Configuration)' == 'Release'">true</BuildPackages>
+    <BuildPackages Condition="'$(BuildPackages)' == ''">false</BuildPackages>
+    <PackageOutputDirectory Condition="'$(PackageOutputDirectory)' == ''">$(MSBuildProjectDirectory)\Thunderstore</PackageOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" GeneratePathProperty="true" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.44.2" PrivateAssets="all" />
+    <EmbeddedResource Include="translations\*.yml">
+      <LogicalName>ReferToCompendium.translations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ThirdPartyNotices.txt" LogicalName="ReferToCompendium.ThirdPartyNotices.txt" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="BepInEx"><HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BepInExPath)\core\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="assembly_valheim"><HintPath>$(GameManagedPath)\assembly_valheim.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="assembly_utils"><HintPath>$(GameManagedPath)\assembly_utils.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="assembly_guiutils"><HintPath>$(GameManagedPath)\assembly_guiutils.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="gui_framework"><HintPath>$(GameManagedPath)\gui_framework.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(GameManagedPath)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManagedPath)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(GameManagedPath)\UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(GameManagedPath)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.AnimationModule"><HintPath>$(GameManagedPath)\UnityEngine.AnimationModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(GameManagedPath)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(GameManagedPath)\UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(GameManagedPath)\UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.TextMeshPro"><HintPath>$(GameManagedPath)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="ValidateGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameManagedPath)\assembly_valheim.dll')" Text="Set GameManagedPath to the original Valheim Managed directory. Publicized assemblies are not used by this project." />
+    <Error Condition="!Exists('$(BepInExPath)\core\BepInEx.dll')" Text="Set BepInExPath to the installed BepInEx directory." />
+  </Target>
+  <Target Name="DeployFinalPlugin" AfterTargets="Build" DependsOnTargets="BundleReferToCompendium" Condition="'$(DeployToGame)' == 'true' And '$(Configuration)' == 'Debug'">
+    <MakeDir Directories="$(GamePluginDirectory)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GamePluginDirectory)" />
+    <GetFileHash Files="$(TargetPath)"><Output TaskParameter="Items" ItemName="SourcePluginHash" /></GetFileHash>
+    <GetFileHash Files="$(GamePluginDirectory)\$(TargetFileName)"><Output TaskParameter="Items" ItemName="InstalledPluginHash" /></GetFileHash>
+    <Error Condition="'@(SourcePluginHash->'%(FileHash)')' != '@(InstalledPluginHash->'%(FileHash)')'" Text="Deployed DLL SHA-256 does not match the final build." />
+    <Message Importance="high" Text="Deployed $(TargetFileName) to $(GamePluginDirectory); SHA-256 @(InstalledPluginHash->'%(FileHash)')" />
+  </Target>
+  <Target Name="ValidateThunderstorePackage" DependsOnTargets="BundleReferToCompendium">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\build\Package-Thunderstore.ps1&quot; -ProjectDirectory &quot;$(MSBuildProjectDirectory)&quot; -TargetPath &quot;$(TargetPath)&quot; -Configuration &quot;$(Configuration)&quot; -OutputDirectory &quot;$(PackageOutputDirectory)&quot; -ValidateOnly" />
+  </Target>
+  <Target Name="MakeThunderstorePackage" AfterTargets="Build" DependsOnTargets="BundleReferToCompendium"
+          Condition="'$(Configuration)' == 'Release' And '$(BuildPackages)' == 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\build\Package-Thunderstore.ps1&quot; -ProjectDirectory &quot;$(MSBuildProjectDirectory)&quot; -TargetPath &quot;$(TargetPath)&quot; -Configuration &quot;$(Configuration)&quot; -OutputDirectory &quot;$(PackageOutputDirectory)&quot;" />
+  </Target>
+</Project>

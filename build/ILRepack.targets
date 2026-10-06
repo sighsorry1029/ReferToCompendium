@@ -1,0 +1,32 @@
+<Project>
+  <!-- Use the compiler's untouched obj DLL on every build, including incremental
+       builds. Repacking the already merged bin DLL would duplicate YamlDotNet. -->
+  <Target Name="BundleReferToCompendium" AfterTargets="CopyFilesToOutputDirectory"
+          DependsOnTargets="ResolveReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_RawPlugin>$(IntermediateOutputPath)$(TargetFileName)</_RawPlugin>
+      <_BundledPlugin>$(IntermediateOutputPath)bundled\$(TargetFileName)</_BundledPlugin>
+      <_BundledSymbols>$(IntermediateOutputPath)bundled\$(TargetName).pdb</_BundledSymbols>
+      <_YamlDotNetAssembly>$(PkgYamlDotNet)\lib\net47\YamlDotNet.dll</_YamlDotNetAssembly>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_RawPlugin)')" Text="Unmerged compiler output is missing. Build the project before validating a package." />
+    <Error Condition="!Exists('$(_YamlDotNetAssembly)')" Text="Pinned YamlDotNet 16.3.0 is missing. Restore NuGet packages before building." />
+    <ItemGroup>
+      <_BundleInput Include="$(_RawPlugin)" />
+      <_BundleInput Include="$(_YamlDotNetAssembly)" />
+      <_BundleLibraryPath Include="@(ReferencePath->'%(RootDir)%(Directory)')" />
+    </ItemGroup>
+    <MakeDir Directories="$(IntermediateOutputPath)bundled" />
+    <ILRepack Parallel="false" Internalize="true" DebugInfo="true"
+              InputAssemblies="@(_BundleInput)" OutputFile="$(_BundledPlugin)"
+              TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_BundleLibraryPath)" />
+    <Copy SourceFiles="$(_BundledPlugin)" DestinationFiles="$(TargetPath)" />
+    <Copy SourceFiles="$(_BundledSymbols)" DestinationFiles="$(TargetDir)$(TargetName).pdb"
+          Condition="Exists('$(_BundledSymbols)')" />
+    <ItemGroup>
+      <FileWrites Include="$(_BundledPlugin)" />
+      <FileWrites Include="$(_BundledSymbols)" Condition="Exists('$(_BundledSymbols)')" />
+    </ItemGroup>
+    <Message Importance="high" Text="Bundled YamlDotNet into $(TargetPath)." />
+  </Target>
+</Project>

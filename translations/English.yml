@@ -1,0 +1,12 @@
+rtc_raven_hint: |-
+  Click for more info
+  Caw!
+rtc_drag_hint: |-
+  Hold a title and drag up or down.
+  Changes save automatically.
+rtc_reset: Reset
+rtc_collapsed_title: Collapsed entries
+rtc_collapsed_help: |-
+  Click the collapsed entries heading to expand or fold the group (gamepad: select this heading and press A). Use + to restore an entry.
+
+  Hold a title and drag it up or down. Release at the gold line to move it within its group; changes save automatically. Hold near the top or bottom to scroll. Drop outside the list to cancel. Reset restores the entries currently available in this compendium.

@@ -1,0 +1,9 @@
+{
+  "name": "ReferToCompendium",
+  "version_number": "1.0.2",
+  "website_url": "https://discord.gg/jkcJCq2sK5",
+  "description": "Persistent raven hints, personal Compendium organization, and a configurable single-column status effect HUD with filtering. Client only.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2351"
+  ]
+}
